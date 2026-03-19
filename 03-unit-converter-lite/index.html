@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unit Converter Lite</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <h1 class="app-title">단위 환산기</h1>
+
+    <!-- Category Tabs -->
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-category="length">길이</button>
+      <button class="tab" data-category="weight">무게</button>
+      <button class="tab" data-category="temperature">온도</button>
+      <button class="tab" data-category="volume">부피</button>
+      <button class="tab" data-category="area">넓이</button>
+      <button class="tab" data-category="speed">속도</button>
+    </nav>
+
+    <!-- Converter -->
+    <div class="converter">
+      <div class="converter-row">
+        <div class="unit-group">
+          <select id="fromUnit" class="unit-select"></select>
+          <input id="fromValue" class="unit-input" type="number" placeholder="값 입력">
+        </div>
+        <button id="swapBtn" class="swap-btn" title="단위 교체">⇄</button>
+        <div class="unit-group">
+          <select id="toUnit" class="unit-select"></select>
+          <div id="toValue" class="unit-result">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <section class="history">
+      <h2 class="history-title">최근 변환</h2>
+      <ul id="historyList" class="history-list"></ul>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

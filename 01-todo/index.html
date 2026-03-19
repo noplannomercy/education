@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TODO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg:         #0f0f0e;
+      --surface:    #161512;
+      --border:     #2a2826;
+      --border-dim: #1e1c1a;
+      --text:       #e0d8cc;
+      --text-dim:   #6b6459;
+      --text-muted: #3d3933;
+      --gold:       #c8a96e;
+      --gold-light: #dfc08a;
+      --gold-dim:   #6e5a35;
+      --done-text:  #46413b;
+      --danger:     #8b4040;
+      --danger-h:   #b05555;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 60px 20px 80px;
+    }
+
+    /* Grain overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.35;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 580px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    .header {
+      margin-bottom: 48px;
+      animation: fadeDown 0.6s ease both;
+    }
+
+    .header-meta {
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: var(--gold-dim);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-meta::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(48px, 10vw, 72px);
+      font-weight: 700;
+      line-height: 0.9;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    .header-sub {
+      margin-top: 14px;
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+    }
+
+    /* Input area */
+    .input-area {
+      margin-bottom: 40px;
+      animation: fadeDown 0.6s 0.1s ease both;
+    }
+
+    .input-wrapper {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      transition: border-color 0.2s;
+      position: relative;
+    }
+
+    .input-wrapper:focus-within {
+      border-color: var(--gold-dim);
+    }
+
+    .input-wrapper::before {
+      content: '>';
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gold);
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    #todo-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 16px 16px 16px 40px;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text);
+      letter-spacing: 0.03em;
+    }
+
+    #todo-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .add-btn {
+      background: none;
+      border: none;
+      border-left: 1px solid var(--border);
+      padding: 0 20px;
+      cursor: pointer;
+      color: var(--text-dim);
+      font-size: 20px;
+      line-height: 1;
+      transition: color 0.2s, background 0.2s;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .add-btn:hover {
+      color: var(--gold);
+      background: rgba(200, 169, 110, 0.06);
+    }
+
+    /* Filter tabs */
+    .filters {
+      display: flex;
+      gap: 0;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--border-dim);
+      animation: fadeDown 0.6s 0.15s ease both;
+    }
+
+    .filter-btn {
+      background: none;
+      border: none;
+      padding: 10px 0;
+      margin-right: 28px;
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      border-bottom: 1px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .filter-btn:hover {
+      color: var(--text);
+    }
+
+    .filter-btn.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+
+    /* Todo list */
+    .todo-list {
+      list-style: none;
+      animation: fadeDown 0.6s 0.2s ease both;
+    }
+
+    .todo-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border-dim);
+      animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+      position: relative;
+    }
+
+    .todo-item.removing {
+      animation: slideOut 0.3s ease forwards;
+    }
+
+    .todo-item:last-child {
+      border-bottom-color: transparent;
+    }
+
+    /* Checkbox */
+    .checkbox-wrap {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .checkbox-wrap input[type="checkbox"] {
+      display: none;
+    }
+
+    .custom-check {
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .custom-check:hover {
+      border-color: var(--gold-dim);
+    }
+
+    .custom-check.checked {
+      background: var(--gold-dim);
+      border-color: var(--gold-dim);
+    }
+
+    .custom-check.checked::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--bg);
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+
+    /* Task text */
+    .todo-text {
+      flex: 1;
+      font-size: 13px;
+      line-height: 1.6;
+      letter-spacing: 0.02em;
+      color: var(--text);
+      transition: color 0.3s;
+      word-break: break-word;
+      position: relative;
+    }
+
+    .todo-text::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 0;
+      height: 1px;
+      background: var(--done-text);
+      transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .todo-item.done .todo-text {
+      color: var(--done-text);
+    }
+
+    .todo-item.done .todo-text::after {
+      width: 100%;
+    }
+
+    /* Delete btn */
+    .delete-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 16px;
+      line-height: 1;
+      padding: 2px 4px;
+      opacity: 0;
+      transition: opacity 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .todo-item:hover .delete-btn {
+      opacity: 1;
+    }
+
+    .delete-btn:hover {
+      color: var(--danger-h);
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      animation: fadeDown 0.6s 0.25s ease both;
+    }
+
+    .count {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .count span {
+      color: var(--gold);
+      font-weight: 500;
+    }
+
+    .clear-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      transition: color 0.2s;
+      padding: 4px 0;
+    }
+
+    .clear-btn:hover {
+      color: var(--danger-h);
+    }
+
+    .clear-btn:disabled {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 60px 0;
+      display: none;
+    }
+
+    .empty-state.visible {
+      display: block;
+    }
+
+    .empty-icon {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 48px;
+      color: var(--border);
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+
+    .empty-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    /* Animations */
+    @keyframes fadeDown {
+      from {
+        opacity: 0;
+        transform: translateY(-12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes slideOut {
+      to {
+        opacity: 0;
+        transform: translateX(-20px);
+        height: 0;
+        padding: 0;
+        margin: 0;
+      }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="header-meta">
+        <span id="current-date"></span>
+      </div>
+      <h1>My <em>Todo</em></h1>
+      <p class="header-sub">// 오늘 해야 할 일들</p>
+    </header>
+
+    <div class="input-area">
+      <div class="input-wrapper">
+        <input type="text" id="todo-input" placeholder="새 할 일 입력 후 Enter" maxlength="200" autocomplete="off">
+        <button class="add-btn" id="add-btn" title="추가">+</button>
+      </div>
+    </div>
+
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="active">Active</button>
+      <button class="filter-btn" data-filter="done">Done</button>
+    </div>
+
+    <ul class="todo-list" id="todo-list"></ul>
+
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">_</div>
+      <p class="empty-text">비어 있음</p>
+    </div>
+
+    <div class="footer">
+      <p class="count">남은 항목 <span id="remaining">0</span>개</p>
+      <button class="clear-btn" id="clear-btn">완료 항목 삭제</button>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'todo-app-v1';
+
+    // State
+    let todos = [];
+    let filter = 'all';
+
+    // Elements
+    const input = document.getElementById('todo-input');
+    const addBtn = document.getElementById('add-btn');
+    const list = document.getElementById('todo-list');
+    const emptyState = document.getElementById('empty-state');
+    const remainingEl = document.getElementById('remaining');
+    const clearBtn = document.getElementById('clear-btn');
+    const dateEl = document.getElementById('current-date');
+
+    // Date
+    const now = new Date();
+    dateEl.textContent = now.toLocaleDateString('ko-KR', {
+      year: 'numeric', month: 'long', day: 'numeric', weekday: 'short'
+    });
+
+    // Load from localStorage
+    function load() {
+      try {
+        todos = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch {
+        todos = [];
+      }
+    }
+
+    // Save to localStorage
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+    }
+
+    // Generate ID
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    }
+
+    // Add todo
+    function addTodo(text) {
+      text = text.trim();
+      if (!text) return;
+      todos.unshift({ id: uid(), text, done: false, createdAt: Date.now() });
+      save();
+      render();
+      input.value = '';
+    }
+
+    // Toggle done
+    function toggleTodo(id) {
+      const todo = todos.find(t => t.id === id);
+      if (todo) {
+        todo.done = !todo.done;
+        save();
+        render();
+      }
+    }
+
+    // Delete todo
+    function deleteTodo(id) {
+      const item = document.querySelector(`[data-id="${id}"]`);
+      if (item) {
+        item.classList.add('removing');
+        item.addEventListener('animationend', () => {
+          todos = todos.filter(t => t.id !== id);
+          save();
+          render();
+        }, { once: true });
+      }
+    }
+
+    // Clear completed
+    function clearCompleted() {
+      const completedIds = todos.filter(t => t.done).map(t => t.id);
+      completedIds.forEach(id => {
+        const item = document.querySelector(`[data-id="${id}"]`);
+        if (item) item.classList.add('removing');
+      });
+      if (completedIds.length === 0) return;
+      setTimeout(() => {
+        todos = todos.filter(t => !t.done);
+        save();
+        render();
+      }, 300);
+    }
+
+    // Filtered todos
+    function filtered() {
+      if (filter === 'active') return todos.filter(t => !t.done);
+      if (filter === 'done') return todos.filter(t => t.done);
+      return todos;
+    }
+
+    // Render
+    function render() {
+      const items = filtered();
+      list.innerHTML = '';
+
+      items.forEach((todo, i) => {
+        const li = document.createElement('li');
+        li.className = 'todo-item' + (todo.done ? ' done' : '');
+        li.dataset.id = todo.id;
+        li.style.animationDelay = `${i * 0.03}s`;
+
+        li.innerHTML = `
+          <div class="checkbox-wrap">
+            <label class="custom-check ${todo.done ? 'checked' : ''}" title="완료 토글">
+              <input type="checkbox" ${todo.done ? 'checked' : ''}>
+            </label>
+          </div>
+          <span class="todo-text">${escapeHtml(todo.text)}</span>
+          <button class="delete-btn" title="삭제">&times;</button>
+        `;
+
+        li.querySelector('.custom-check input').addEventListener('change', () => toggleTodo(todo.id));
+        li.querySelector('.delete-btn').addEventListener('click', () => deleteTodo(todo.id));
+
+        list.appendChild(li);
+      });
+
+      // Empty state
+      const showEmpty = items.length === 0;
+      emptyState.classList.toggle('visible', showEmpty);
+
+      // Remaining count
+      const activeCount = todos.filter(t => !t.done).length;
+      remainingEl.textContent = activeCount;
+
+      // Clear btn
+      const hasDone = todos.some(t => t.done);
+      clearBtn.disabled = !hasDone;
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Events
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') addTodo(input.value);
+    });
+
+    addBtn.addEventListener('click', () => addTodo(input.value));
+
+    clearBtn.addEventListener('click', clearCompleted);
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        filter = btn.dataset.filter;
+        render();
+      });
+    });
+
+    // Init
+    load();
+    render();
+  </script>
+</body>
+</html>

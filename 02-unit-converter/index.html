@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unit Converter</title>
+  <style>
+    /* ── CSS Variables ── */
+    :root {
+      --color-bg: #f8f9fa;
+      --color-surface: #ffffff;
+      --color-sidebar: #1e293b;
+      --color-sidebar-text: #cbd5e1;
+      --color-sidebar-active: #3b82f6;
+      --color-sidebar-hover: #334155;
+      --color-text: #1e293b;
+      --color-text-muted: #64748b;
+      --color-border: #e2e8f0;
+      --color-input-bg: #f1f5f9;
+      --color-accent: #3b82f6;
+      --color-accent-hover: #2563eb;
+      --color-success: #22c55e;
+      --color-danger: #ef4444;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --sidebar-width: 240px;
+      --transition: 0.2s ease;
+      --color-overlay: rgba(0, 0, 0, 0.5);
+      --z-overlay: 99;
+      --z-sidebar: 100;
+    }
+
+    [data-theme="dark"] {
+      --color-bg: #0f172a;
+      --color-surface: #1e293b;
+      --color-sidebar: #0f172a;
+      --color-sidebar-text: #94a3b8;
+      --color-sidebar-active: #60a5fa;
+      --color-sidebar-hover: #1e293b;
+      --color-text: #e2e8f0;
+      --color-text-muted: #94a3b8;
+      --color-border: #334155;
+      --color-input-bg: #0f172a;
+      --color-accent: #60a5fa;
+      --color-accent-hover: #3b82f6;
+      --color-success: #4ade80;
+      --color-danger: #f87171;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+      --color-overlay: rgba(0, 0, 0, 0.7);
+    }
+
+    /* ── Reset & Base ── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+        "Segoe UI Emoji", "Segoe UI Symbol";
+      background: var(--color-bg);
+      color: var(--color-text);
+      overflow: hidden;
+      transition: background var(--transition), color var(--transition);
+    }
+
+    /* ── App Layout ── */
+    .app {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--color-sidebar);
+      color: var(--color-sidebar-text);
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+
+    /* ── Sidebar Overlay (mobile) ── */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--color-overlay);
+      z-index: var(--z-overlay);
+    }
+
+    .sidebar-overlay.visible {
+      display: block;
+    }
+
+    /* ── Main Area ── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--color-border);
+      background: var(--color-surface);
+      flex-shrink: 0;
+    }
+
+    /* ── Content Area ── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* === Sidebar Components === */
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 16px 12px;
+      border-bottom: 1px solid #1e3a5f22;
+    }
+    .sidebar-logo {
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .sidebar-close {
+      background: none;
+      border: none;
+      color: var(--color-sidebar-text);
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      padding: 4px 6px;
+      border-radius: var(--radius-sm);
+      display: none; /* shown only on mobile via media query */
+    }
+    .sidebar-close:hover { color: #fff; background: var(--color-sidebar-hover); }
+
+    .sidebar-search { padding: 12px 12px 8px; }
+    .sidebar-search input {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid #334155;
+      background: rgba(0,0,0,0.3);
+      color: var(--color-sidebar-text);
+      font-size: 13px;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    .sidebar-search input:focus { border-color: var(--color-sidebar-active); }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 4px 8px;
+      overflow-y: auto;
+      list-style: none;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      color: var(--color-sidebar-text);
+      font-size: 14px;
+      transition: background var(--transition), color var(--transition);
+      user-select: none;
+    }
+    .nav-item:hover { background: var(--color-sidebar-hover); color: #fff; }
+    .nav-item.active { background: var(--color-sidebar-active); color: #fff; font-weight: 600; }
+    .nav-item .nav-icon { font-size: 16px; line-height: 1; }
+
+    .sidebar-favorites-section {
+      padding: 10px 12px 16px;
+      border-top: 1px solid #334155;
+      flex-shrink: 0;
+    }
+    .sidebar-section-title {
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+    .fav-list { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+    .fav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      color: var(--color-sidebar-text);
+      font-size: 13px;
+      transition: background var(--transition);
+    }
+    .fav-item:hover { background: var(--color-sidebar-hover); color: #fff; }
+    .fav-item .fav-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fav-item .fav-del {
+      background: none;
+      border: none;
+      color: #475569;
+      cursor: pointer;
+      font-size: 13px;
+      padding: 0 2px;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .fav-item .fav-del:hover { color: var(--color-danger); }
+    .fav-empty { color: #475569; font-size: 12px; padding: 4px 8px; }
+
+    /* === Topbar Components === */
+    .topbar-left, .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .topbar-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--color-text);
+    }
+    .hamburger {
+      background: none;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      color: var(--color-text);
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      display: none; /* shown on mobile */
+      line-height: 1;
+    }
+    .hamburger:hover { background: var(--color-input-bg); }
+    .fav-toggle, .theme-toggle {
+      background: none;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 16px;
+      color: var(--color-text);
+      transition: background var(--transition), border-color var(--transition);
+      line-height: 1;
+    }
+    .fav-toggle:hover, .theme-toggle:hover { background: var(--color-input-bg); }
+    .fav-toggle.active { color: #f59e0b; border-color: #f59e0b; }
+
+    /* === Converter Panel === */
+    .converter-panel {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: var(--shadow-sm);
+    }
+    .converter-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: end;
+      gap: 16px;
+    }
+    .unit-box {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .unit-box label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .unit-select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border);
+      background: var(--color-input-bg);
+      color: var(--color-text);
+      font-size: 14px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    .unit-select:focus { border-color: var(--color-accent); }
+    .unit-input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: var(--radius-sm);
+      border: 2px solid var(--color-border);
+      background: var(--color-input-bg);
+      color: var(--color-text);
+      font-size: 24px;
+      font-weight: 600;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    .unit-input:focus { border-color: var(--color-accent); }
+    .unit-input[readonly] {
+      cursor: default;
+      color: var(--color-accent);
+      border-color: var(--color-border);
+    }
+    .swap-btn {
+      background: var(--color-input-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--transition), transform var(--transition), border-color var(--transition);
+      flex-shrink: 0;
+      margin-bottom: 4px;
+    }
+    .swap-btn:hover {
+      background: var(--color-accent);
+      color: #fff;
+      border-color: var(--color-accent);
+      transform: rotate(180deg);
+    }
+    .converter-meta {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .currency-note {
+      font-size: 11px;
+      color: var(--color-text-muted);
+    }
+    .copy-btn {
+      background: none;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 6px 14px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--color-text-muted);
+      transition: background var(--transition), color var(--transition), border-color var(--transition);
+    }
+    .copy-btn:hover {
+      background: var(--color-accent);
+      color: #fff;
+      border-color: var(--color-accent);
+    }
+
+    /* === Bottom Panel === */
+    .bottom-panel {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--color-border);
+      flex-shrink: 0;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 14px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--color-text-muted);
+      font-weight: 500;
+      transition: color var(--transition);
+      border-bottom: 2px solid transparent;
+    }
+    .tab-btn.active {
+      color: var(--color-accent);
+      border-bottom-color: var(--color-accent);
+      font-weight: 600;
+    }
+    .tab-btn:hover:not(.active) { color: var(--color-text); }
+    .tab-content {
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* === Tab content items === */
+    .tab-empty {
+      color: var(--color-text-muted);
+      font-size: 14px;
+      text-align: center;
+      padding: 24px 16px;
+      line-height: 1.6;
+    }
+    .tab-toolbar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+    }
+    .tab-action-btn {
+      background: none;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--color-text-muted);
+      transition: color var(--transition), border-color var(--transition);
+    }
+    .tab-action-btn:hover { color: var(--color-danger); border-color: var(--color-danger); }
+    .item-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: var(--color-input-bg);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    .item-row:hover { background: var(--color-border); }
+    .item-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+    .item-icon { font-size: 15px; flex-shrink: 0; }
+    .item-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .item-time {
+      color: var(--color-text-muted);
+      font-size: 11px;
+      flex-shrink: 0;
+      margin-left: 8px;
+    }
+    .fav-tab-del {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--color-text-muted);
+      font-size: 14px;
+      padding: 2px 4px;
+      flex-shrink: 0;
+      line-height: 1;
+      border-radius: var(--radius-sm);
+    }
+    .fav-tab-del:hover { color: var(--color-danger); background: rgba(239,68,68,0.1); }
+
+    /* ── Mobile Responsive ── */
+    @media (max-width: 767px) {
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: var(--z-sidebar);
+        transform: translateX(-100%);
+        transition: transform var(--transition);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main {
+        height: 100vh;
+      }
+
+      .hamburger { display: block; }
+      .sidebar-close { display: block; }
+      .converter-row { grid-template-columns: 1fr; }
+      .swap-btn { width: 100%; border-radius: var(--radius-sm); height: 40px; }
+      .unit-input { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar" aria-label="카테고리 네비게이션">
+      <div class="sidebar-header">
+        <span class="sidebar-logo">Unit Converter</span>
+        <button class="sidebar-close" id="sidebarClose" aria-label="사이드바 닫기">✕</button>
+      </div>
+      <div class="sidebar-search">
+        <input type="search" id="categorySearch" placeholder="카테고리 검색..." aria-label="카테고리 검색">
+      </div>
+      <nav class="sidebar-nav" id="categoryNav" role="navigation" aria-label="단위 카테고리 목록"></nav>
+      <div class="sidebar-favorites-section">
+        <div class="sidebar-section-title">즐겨찾기</div>
+        <ul class="fav-list" id="favList" aria-label="즐겨찾기 목록"></ul>
+      </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <main class="main">
+      <header class="topbar" id="topbar" role="banner">
+        <div class="topbar-left">
+          <button class="hamburger" id="hamburger" aria-label="메뉴 열기">☰</button>
+          <h1 class="topbar-title" id="topbarTitle">길이</h1>
+        </div>
+        <div class="topbar-right">
+          <button class="fav-toggle" id="favToggle" aria-label="즐겨찾기 토글" aria-pressed="false">☆</button>
+          <button class="theme-toggle" id="themeToggle" aria-label="테마 전환">🌙</button>
+        </div>
+      </header>
+
+      <div class="content" id="content">
+        <div class="converter-panel" id="converterPanel"></div>
+        <div class="bottom-panel">
+          <div class="panel-tabs" role="tablist" aria-label="변환 기록 탭">
+            <button class="tab-btn active" data-tab="history" role="tab" aria-selected="true" aria-controls="tabContent">히스토리</button>
+            <button class="tab-btn" data-tab="favorites" role="tab" aria-selected="false" aria-controls="tabContent">즐겨찾기</button>
+          </div>
+          <div class="tab-content" id="tabContent" role="tabpanel"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // === UnitData: 12개 카테고리 데이터 정의 ===
+    const UnitData = {
+      categories: [
+        // 1. 길이
+        {
+          id: 'length',
+          label: '길이',
+          icon: '📏',
+          units: [
+            { id: 'mm', label: '밀리미터 (mm)', factor: 0.001 },
+            { id: 'cm', label: '센티미터 (cm)', factor: 0.01 },
+            { id: 'm',  label: '미터 (m)',       factor: 1 },
+            { id: 'km', label: '킬로미터 (km)',  factor: 1000 },
+            { id: 'in', label: '인치 (in)',       factor: 0.0254 },
+            { id: 'ft', label: '피트 (ft)',       factor: 0.3048 },
+            { id: 'yd', label: '야드 (yd)',       factor: 0.9144 },
+            { id: 'mi', label: '마일 (mi)',       factor: 1609.344 },
+          ],
+        },
+
+        // 2. 무게
+        {
+          id: 'weight',
+          label: '무게',
+          icon: '⚖️',
+          units: [
+            { id: 'mg', label: '밀리그램 (mg)', factor: 0.000001 },
+            { id: 'g',  label: '그램 (g)',       factor: 0.001 },
+            { id: 'kg', label: '킬로그램 (kg)', factor: 1 },
+            { id: 't',  label: '톤 (t)',          factor: 1000 },
+            { id: 'oz', label: '온스 (oz)',       factor: 0.0283495 },
+            { id: 'lb', label: '파운드 (lb)',     factor: 0.453592 },
+          ],
+        },
+
+        // 3. 온도
+        {
+          id: 'temperature',
+          label: '온도',
+          icon: '🌡️',
+          special: true,
+          units: [
+            { id: 'C', label: '섭씨 (°C)' },
+            { id: 'F', label: '화씨 (°F)' },
+            { id: 'K', label: '켈빈 (K)' },
+          ],
+        },
+
+        // 4. 부피
+        {
+          id: 'volume',
+          label: '부피',
+          icon: '🧴',
+          units: [
+            { id: 'ml',   label: '밀리리터 (ml)',    factor: 0.001 },
+            { id: 'L',    label: '리터 (L)',           factor: 1 },
+            { id: 'm3',   label: '세제곱미터 (m³)',   factor: 1000 },
+            { id: 'floz', label: '액량온스 (fl oz)',  factor: 0.0295735 },
+            { id: 'pt',   label: '파인트 (pt)',        factor: 0.473176 },
+            { id: 'qt',   label: '쿼트 (qt)',          factor: 0.946353 },
+            { id: 'gal',  label: '갤런 (gal)',         factor: 3.78541 },
+          ],
+        },
+
+        // 5. 넓이
+        {
+          id: 'area',
+          label: '넓이',
+          icon: '📐',
+          units: [
+            { id: 'mm2', label: '제곱밀리미터 (mm²)', factor: 0.000001 },
+            { id: 'cm2', label: '제곱센티미터 (cm²)', factor: 0.0001 },
+            { id: 'm2',  label: '제곱미터 (m²)',       factor: 1 },
+            { id: 'km2', label: '제곱킬로미터 (km²)', factor: 1000000 },
+            { id: 'in2', label: '제곱인치 (in²)',      factor: 0.00064516 },
+            { id: 'ft2', label: '제곱피트 (ft²)',      factor: 0.092903 },
+            { id: 'ac',  label: '에이커 (ac)',          factor: 4046.86 },
+          ],
+        },
+
+        // 6. 속도
+        {
+          id: 'speed',
+          label: '속도',
+          icon: '💨',
+          units: [
+            { id: 'mps',  label: '미터/초 (m/s)',       factor: 1 },
+            { id: 'kmh',  label: '킬로미터/시 (km/h)',  factor: 0.277778 },
+            { id: 'mph',  label: '마일/시 (mph)',        factor: 0.44704 },
+            { id: 'knot', label: '노트 (knot)',          factor: 0.514444 },
+          ],
+        },
+
+        // 7. 시간
+        {
+          id: 'time',
+          label: '시간',
+          icon: '⏱️',
+          units: [
+            { id: 'ms',    label: '밀리초 (ms)',  factor: 0.001 },
+            { id: 's',     label: '초 (s)',        factor: 1 },
+            { id: 'min',   label: '분 (min)',      factor: 60 },
+            { id: 'h',     label: '시간 (h)',      factor: 3600 },
+            { id: 'day',   label: '일 (day)',      factor: 86400 },
+            { id: 'week',  label: '주 (week)',     factor: 604800 },
+            { id: 'month', label: '월 (month)',    factor: 2629800 },
+            { id: 'year',  label: '년 (year)',     factor: 31557600 },
+          ],
+        },
+
+        // 8. 압력
+        {
+          id: 'pressure',
+          label: '압력',
+          icon: '🔵',
+          units: [
+            { id: 'Pa',  label: '파스칼 (Pa)',          factor: 1 },
+            { id: 'hPa', label: '헥토파스칼 (hPa)',     factor: 100 },
+            { id: 'kPa', label: '킬로파스칼 (kPa)',     factor: 1000 },
+            { id: 'bar', label: '바 (bar)',              factor: 100000 },
+            { id: 'atm', label: '기압 (atm)',            factor: 101325 },
+            { id: 'psi', label: '파운드/제곱인치 (psi)', factor: 6894.76 },
+          ],
+        },
+
+        // 9. 데이터
+        {
+          id: 'data',
+          label: '데이터',
+          icon: '💾',
+          units: [
+            { id: 'bit', label: '비트 (bit)',      factor: 1 },
+            { id: 'B',   label: '바이트 (B)',       factor: 8 },
+            { id: 'KB',  label: '킬로바이트 (KB)', factor: 8192 },
+            { id: 'MB',  label: '메가바이트 (MB)', factor: 8388608 },
+            { id: 'GB',  label: '기가바이트 (GB)', factor: 8589934592 },
+            { id: 'TB',  label: '테라바이트 (TB)', factor: 8796093022208 },
+            { id: 'PB',  label: '페타바이트 (PB)', factor: 9007199254740992 },
+          ],
+        },
+
+        // 10. 에너지
+        {
+          id: 'energy',
+          label: '에너지',
+          icon: '⚡',
+          units: [
+            { id: 'J',   label: '줄 (J)',               factor: 1 },
+            { id: 'kJ',  label: '킬로줄 (kJ)',           factor: 1000 },
+            { id: 'cal', label: '칼로리 (cal)',           factor: 4.184 },
+            { id: 'kcal', label: '킬로칼로리 (kcal)',      factor: 4184 },
+            { id: 'Wh',  label: '와트시 (Wh)',            factor: 3600 },
+            { id: 'kWh', label: '킬로와트시 (kWh)',       factor: 3600000 },
+            { id: 'BTU', label: '영국열량단위 (BTU)',     factor: 1055.06 },
+          ],
+        },
+
+        // 11. 각도
+        {
+          id: 'angle',
+          label: '각도',
+          icon: '🔄',
+          units: [
+            { id: 'deg',  label: '도 (°)',      factor: 1 },
+            { id: 'rad',  label: '라디안 (rad)', factor: 57.2958 },
+            { id: 'grad', label: '그라드 (grad)', factor: 0.9 },
+            { id: 'turn', label: '회전 (turn)',  factor: 360 },
+          ],
+        },
+
+        // 12. 화폐
+        {
+          id: 'currency',
+          label: '화폐',
+          icon: '💱',
+          special: true,
+          rateDate: '2026-03-07',
+          units: [
+            { id: 'KRW', label: '한국 원 (₩)',      toKRW: 1 },
+            { id: 'USD', label: '미국 달러 ($)',     toKRW: 1430 },
+            { id: 'EUR', label: '유로 (€)',           toKRW: 1560 },
+            { id: 'JPY', label: '일본 엔 (¥)',       toKRW: 9.5 },
+            { id: 'GBP', label: '영국 파운드 (£)',   toKRW: 1820 },
+            { id: 'CNY', label: '중국 위안 (¥)',     toKRW: 197 },
+          ],
+        },
+      ],
+
+      getCategory(id) {
+        return this.categories.find(c => c.id === id);
+      },
+
+      getUnit(categoryId, unitId) {
+        const cat = this.getCategory(categoryId);
+        return cat?.units.find(u => u.id === unitId);
+      },
+    };
+
+    // === UnitData self-test ===
+    console.assert(UnitData.categories.length === 12, 'UnitData: 12개 카테고리 아님');
+    console.assert(UnitData.getUnit('length', 'm').factor === 1, 'UnitData: 미터 factor 오류');
+    console.assert(UnitData.getCategory('temperature').special === true, 'UnitData: temperature special 오류');
+    console.assert(UnitData.getUnit('currency', 'USD').toKRW === 1430, 'UnitData: USD toKRW 오류');
+    console.assert(UnitData.getUnit('speed', 'mps').factor === 1, 'UnitData: m/s factor 오류');
+    console.log('✅ UnitData OK');
+
+    // === Converter ===
+    const Converter = {
+      convert(categoryId, fromId, toId, value) {
+        if (value === '' || value === null || value === undefined) return '';
+        const num = parseFloat(value);
+        if (isNaN(num)) return '';
+        const cat = UnitData.getCategory(categoryId);
+        if (!cat) return '';
+
+        if (cat.id === 'temperature') return this._convertTemp(fromId, toId, num);
+        if (cat.id === 'currency')    return this._convertCurrency(cat, fromId, toId, num);
+
+        // General: factor-based (to base unit, then to target)
+        const fromUnit = UnitData.getUnit(categoryId, fromId);
+        const toUnit   = UnitData.getUnit(categoryId, toId);
+        if (!fromUnit || !toUnit) return '';
+        return num * fromUnit.factor / toUnit.factor;
+      },
+
+      _convertTemp(from, to, val) {
+        let celsius;
+        if      (from === 'C') celsius = val;
+        else if (from === 'F') celsius = (val - 32) * 5 / 9;
+        else if (from === 'K') celsius = val - 273.15;
+        else return '';
+
+        if      (to === 'C') return celsius;
+        else if (to === 'F') return celsius * 9 / 5 + 32;
+        else if (to === 'K') return celsius + 273.15;
+        return '';
+      },
+
+      _convertCurrency(cat, fromId, toId, val) {
+        const fromUnit = cat.units.find(u => u.id === fromId);
+        const toUnit   = cat.units.find(u => u.id === toId);
+        if (!fromUnit || !toUnit) return '';
+        const inKRW = val * fromUnit.toKRW;
+        return inKRW / toUnit.toKRW;
+      },
+
+      format(value) {
+        if (value === '' || value === null || value === undefined) return '';
+        const num = parseFloat(value);
+        if (isNaN(num)) return '';
+        // Remove trailing zeros, limit precision
+        return parseFloat(num.toPrecision(10)).toString();
+      }
+    };
+
+    // === Converter self-test ===
+    const _eps = 0.0001;
+    const _approx = (a, b) => Math.abs(a - b) < _eps;
+
+    console.assert(Converter.convert('length', 'm', 'cm', 1) === 100, 'Converter: 1m → 100cm');
+    console.assert(Converter.convert('length', 'km', 'm', 1) === 1000, 'Converter: 1km → 1000m');
+    console.assert(Converter.convert('length', 'm', 'm', 5) === 5, 'Converter: same unit');
+    console.assert(Converter.convert('weight', 'kg', 'g', 1) === 1000, 'Converter: 1kg → 1000g');
+    console.assert(Converter.convert('temperature', 'C', 'F', 0) === 32, 'Converter: 0°C → 32°F');
+    console.assert(Converter.convert('temperature', 'C', 'F', 100) === 212, 'Converter: 100°C → 212°F');
+    console.assert(Converter.convert('temperature', 'F', 'C', 32) === 0, 'Converter: 32°F → 0°C');
+    console.assert(_approx(Converter.convert('temperature', 'C', 'K', 0), 273.15), 'Converter: 0°C → 273.15K');
+    console.assert(Converter.convert('length', 'm', 'cm', '') === '', 'Converter: empty input');
+    console.assert(Converter.convert('length', 'm', 'cm', 'abc') === '', 'Converter: NaN input');
+    console.assert(_approx(Converter.convert('currency', 'USD', 'KRW', 1), 1430), 'Converter: 1 USD → 1430 KRW');
+    console.assert(_approx(Converter.convert('currency', 'KRW', 'USD', 1430), 1), 'Converter: 1430 KRW → 1 USD');
+    console.log('✅ Converter OK');
+
+    const Storage = {
+      KEYS: {
+        HISTORY:   'uc_history',
+        FAVORITES: 'uc_favorites',
+        THEME:     'uc_theme',
+      },
+      MAX_HISTORY: 50,
+
+      // --- Favorites ---
+      getFavorites() {
+        try { return JSON.parse(localStorage.getItem(this.KEYS.FAVORITES)) || []; }
+        catch { return []; }
+      },
+      saveFavorites(list) {
+        localStorage.setItem(this.KEYS.FAVORITES, JSON.stringify(list));
+      },
+      addFavorite(item) {
+        const list = this.getFavorites();
+        const exists = list.some(f =>
+          f.category === item.category && f.from === item.from && f.to === item.to
+        );
+        if (exists) return false;
+        list.unshift(item);
+        this.saveFavorites(list);
+        return true;
+      },
+      removeFavorite(item) {
+        const list = this.getFavorites().filter(f =>
+          !(f.category === item.category && f.from === item.from && f.to === item.to)
+        );
+        this.saveFavorites(list);
+      },
+      isFavorite(item) {
+        return this.getFavorites().some(f =>
+          f.category === item.category && f.from === item.from && f.to === item.to
+        );
+      },
+      toggleFavorite(item) {
+        if (this.isFavorite(item)) {
+          this.removeFavorite(item);
+          return false;
+        }
+        this.addFavorite(item);
+        return true;
+      },
+
+      // --- History ---
+      getHistory() {
+        try { return JSON.parse(localStorage.getItem(this.KEYS.HISTORY)) || []; }
+        catch { return []; }
+      },
+      addHistory(item) {
+        const list = this.getHistory();
+        // Deduplicate: skip if same as latest entry
+        const last = list[0];
+        if (last &&
+            last.category === item.category &&
+            last.from === item.from &&
+            last.to === item.to &&
+            last.fromVal === item.fromVal) return;
+        list.unshift({ ...item, id: Date.now(), ts: Date.now() });
+        if (list.length > this.MAX_HISTORY) list.splice(this.MAX_HISTORY);
+        localStorage.setItem(this.KEYS.HISTORY, JSON.stringify(list));
+      },
+      clearHistory() {
+        localStorage.removeItem(this.KEYS.HISTORY);
+      },
+
+      // --- Theme ---
+      getTheme() {
+        try { return localStorage.getItem(this.KEYS.THEME) || 'auto'; }
+        catch { return 'auto'; }
+      },
+      setTheme(theme) {
+        localStorage.setItem(this.KEYS.THEME, theme);
+      },
+    };
+
+
+    const UI = {
+      state: {
+        category: 'length',
+        fromUnit: 'm',
+        toUnit:   'cm',
+      },
+
+      // ── Sidebar ──────────────────────────────────────────
+
+      renderSidebar(filter = '') {
+        const nav = document.getElementById('categoryNav');
+        const cats = filter
+          ? UnitData.categories.filter(c =>
+              c.label.toLowerCase().includes(filter.toLowerCase()) || c.id.toLowerCase().includes(filter.toLowerCase())
+            )
+          : UnitData.categories;
+
+        nav.innerHTML = '<ul role="menu" style="list-style:none;padding:0;margin:0">' +
+          cats.map(c => `
+            <li class="nav-item ${c.id === this.state.category ? 'active' : ''}"
+                data-category="${c.id}"
+                role="menuitem"
+                tabindex="0"
+                aria-current="${c.id === this.state.category ? 'page' : 'false'}">
+              <span class="nav-icon" aria-hidden="true">${c.icon}</span>
+              <span>${c.label}</span>
+            </li>
+          `).join('') + '</ul>';
+
+        nav.querySelectorAll('.nav-item').forEach(el => {
+          el.addEventListener('click', () => this.selectCategory(el.dataset.category));
+          el.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              this.selectCategory(el.dataset.category);
+            }
+          });
+        });
+      },
+
+      renderFavoritesSidebar() {
+        const list = document.getElementById('favList');
+        const favs = Storage.getFavorites();
+        if (!favs.length) {
+          list.innerHTML = '<li class="fav-empty">없음</li>';
+          return;
+        }
+        list.innerHTML = favs.map((f, i) => {
+          const cat   = UnitData.getCategory(f.category);
+          const fromU = UnitData.getUnit(f.category, f.from);
+          const toU   = UnitData.getUnit(f.category, f.to);
+          const fromLabel = fromU?.label?.split(' ')[0] || f.from;
+          const toLabel   = toU?.label?.split(' ')[0]   || f.to;
+          return `
+            <li class="fav-item">
+              <span class="fav-label"
+                    data-category="${f.category}" data-from="${f.from}" data-to="${f.to}"
+                    title="${fromLabel} → ${toLabel}">
+                ${cat?.icon || ''} ${fromLabel} → ${toLabel}
+              </span>
+              <button class="fav-del" data-index="${i}" aria-label="즐겨찾기 삭제">✕</button>
+            </li>
+          `;
+        }).join('');
+
+        list.querySelectorAll('.fav-label').forEach(el => {
+          el.addEventListener('click', () => {
+            this.selectCategory(el.dataset.category);
+            this.state.fromUnit = el.dataset.from;
+            this.state.toUnit   = el.dataset.to;
+            if (typeof this.renderConverter === 'function') this.renderConverter();
+            if (window.innerWidth < 768) this.closeSidebar();
+          });
+        });
+
+        list.querySelectorAll('.fav-del').forEach(btn => {
+          btn.addEventListener('click', e => {
+            e.stopPropagation();
+            const favs = Storage.getFavorites();
+            Storage.removeFavorite(favs[parseInt(btn.dataset.index)]);
+            this.renderFavoritesSidebar();
+            this.updateFavToggle();
+          });
+        });
+      },
+
+      selectCategory(id) {
+        this.state.category = id;
+        const cat = UnitData.getCategory(id);
+        this.state.fromUnit = cat.units[0].id;
+        this.state.toUnit   = cat.units[1]?.id || cat.units[0].id;
+        const title = document.getElementById('topbarTitle');
+        if (title) title.textContent = cat.label;
+        this.renderSidebar();
+        if (typeof this.renderConverter === 'function') this.renderConverter();
+        this.updateFavToggle();
+      },
+
+      openSidebar() {
+        document.getElementById('sidebar').classList.add('open');
+        document.getElementById('sidebarOverlay').classList.add('visible');
+        const hbr = document.getElementById('hamburger');
+        if (hbr) hbr.setAttribute('aria-expanded', 'true');
+      },
+
+      closeSidebar() {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('visible');
+        const hbr = document.getElementById('hamburger');
+        if (hbr) hbr.setAttribute('aria-expanded', 'false');
+      },
+
+      updateFavToggle() {
+        const btn = document.getElementById('favToggle');
+        if (!btn) return;
+        const isFav = Storage.isFavorite({
+          category: this.state.category,
+          from: this.state.fromUnit,
+          to:   this.state.toUnit,
+        });
+        btn.textContent = isFav ? '★' : '☆';
+        btn.classList.toggle('active', isFav);
+        btn.setAttribute('aria-pressed', String(isFav));
+      },
+
+      // ── Converter panel ──────────────────────────────────
+
+      renderConverter() {
+        const panel = document.getElementById('converterPanel');
+        const cat   = UnitData.getCategory(this.state.category);
+
+        const unitOptions = (selectedId) => cat.units.map(u =>
+          `<option value="${u.id}" ${u.id === selectedId ? 'selected' : ''}>${u.label}</option>`
+        ).join('');
+
+        const currencyNote = cat.id === 'currency'
+          ? `<p class="currency-note">* 고정 환율 기준일: ${cat.rateDate}</p>`
+          : '';
+
+        panel.innerHTML = `
+          <div class="converter-row">
+            <div class="unit-box">
+              <label for="fromSelect">변환 전</label>
+              <select class="unit-select" id="fromSelect" aria-label="변환 전 단위">
+                ${unitOptions(this.state.fromUnit)}
+              </select>
+              <input class="unit-input" id="fromInput" type="number"
+                     placeholder="0" aria-label="변환 전 값" autocomplete="off">
+            </div>
+            <button class="swap-btn" id="swapBtn" aria-label="단위 교체" title="단위 교체 (⇄)">⇄</button>
+            <div class="unit-box">
+              <label for="toSelect">변환 후</label>
+              <select class="unit-select" id="toSelect" aria-label="변환 후 단위">
+                ${unitOptions(this.state.toUnit)}
+              </select>
+              <input class="unit-input" id="toInput" type="number"
+                     placeholder="0" readonly aria-label="변환 결과" aria-live="polite">
+            </div>
+          </div>
+          <div class="converter-meta">
+            ${currencyNote}
+            <button class="copy-btn" id="copyBtn" aria-label="결과 복사">결과 복사</button>
+          </div>
+        `;
+
+        this._bindConverterEvents();
+        this.updateFavToggle();
+      },
+
+      _bindConverterEvents() {
+        const fromInput  = document.getElementById('fromInput');
+        const toInput    = document.getElementById('toInput');
+        const fromSelect = document.getElementById('fromSelect');
+        const toSelect   = document.getElementById('toSelect');
+
+        const doConvert = () => {
+          const val = fromInput.value;
+          const result = Converter.convert(
+            this.state.category, this.state.fromUnit, this.state.toUnit, val
+          );
+          toInput.value = (result !== '') ? Converter.format(result) : '';
+
+          if (val !== '' && result !== '') {
+            Storage.addHistory({
+              category: this.state.category,
+              from:     this.state.fromUnit,
+              to:       this.state.toUnit,
+              fromVal:  parseFloat(val),
+              toVal:    parseFloat(result),
+            });
+            const activeTab = document.querySelector('.tab-btn.active');
+            if (activeTab?.dataset.tab === 'history' && typeof this.renderHistoryTab === 'function') {
+              this.renderHistoryTab();
+            }
+          }
+        };
+
+        fromInput.addEventListener('input', doConvert);
+
+        fromSelect.addEventListener('change', () => {
+          this.state.fromUnit = fromSelect.value;
+          doConvert();
+          this.updateFavToggle();
+        });
+
+        toSelect.addEventListener('change', () => {
+          this.state.toUnit = toSelect.value;
+          doConvert();
+          this.updateFavToggle();
+        });
+
+        document.getElementById('swapBtn').addEventListener('click', () => {
+          const prevToVal = toInput.value;
+          [this.state.fromUnit, this.state.toUnit] = [this.state.toUnit, this.state.fromUnit];
+          this.renderConverter();
+          const newFromInput = document.getElementById('fromInput');
+          if (prevToVal !== '') {
+            newFromInput.value = prevToVal;
+            newFromInput.dispatchEvent(new Event('input'));
+          }
+        });
+
+        document.getElementById('copyBtn').addEventListener('click', () => {
+          const val = toInput.value;
+          if (!val) return;
+          navigator.clipboard.writeText(val).then(() => {
+            const btn = document.getElementById('copyBtn');
+            const original = btn.textContent;
+            btn.textContent = '복사됨!';
+            setTimeout(() => { btn.textContent = original; }, 1500);
+          }).catch(() => {
+            // Fallback for non-HTTPS or unsupported clipboard API
+            const ta = document.createElement('textarea');
+            ta.value = val;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            const btn = document.getElementById('copyBtn');
+            btn.textContent = '복사됨!';
+            setTimeout(() => { btn.textContent = '결과 복사'; }, 1500);
+          });
+        });
+      },
+
+      // ── Tab panel ─────────────────────────────────────────
+
+      initTabEvents() {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => {
+              b.classList.remove('active');
+              b.setAttribute('aria-selected', 'false');
+            });
+            btn.classList.add('active');
+            btn.setAttribute('aria-selected', 'true');
+            if (btn.dataset.tab === 'history') this.renderHistoryTab();
+            else this.renderFavoritesTab();
+          });
+        });
+      },
+
+      // ── Sidebar events ────────────────────────────────────
+
+      initSidebarEvents() {
+        document.getElementById('hamburger').addEventListener('click', () => this.openSidebar());
+        document.getElementById('sidebarClose').addEventListener('click', () => this.closeSidebar());
+        document.getElementById('sidebarOverlay').addEventListener('click', () => this.closeSidebar());
+
+        document.getElementById('categorySearch').addEventListener('input', e => {
+          this.renderSidebar(e.target.value.trim());
+        });
+
+        document.getElementById('favToggle').addEventListener('click', () => {
+          const item = {
+            category: this.state.category,
+            from: this.state.fromUnit,
+            to:   this.state.toUnit,
+          };
+          Storage.toggleFavorite(item);
+          this.updateFavToggle();
+          this.renderFavoritesSidebar();
+        });
+      },
+
+      // ── History tab ──────────────────────────────────────
+
+      renderHistoryTab() {
+        const content = document.getElementById('tabContent');
+        const history = Storage.getHistory();
+
+        if (!history.length) {
+          content.innerHTML = '<p class="tab-empty">변환 기록이 없습니다.</p>';
+          return;
+        }
+
+        content.innerHTML = `
+          <div class="tab-toolbar">
+            <button class="tab-action-btn" id="clearHistoryBtn">전체 삭제</button>
+          </div>
+          <ul class="item-list" aria-label="변환 기록">
+            ${history.map(h => {
+              const cat   = UnitData.getCategory(h.category);
+              const fromU = UnitData.getUnit(h.category, h.from);
+              const toU   = UnitData.getUnit(h.category, h.to);
+              const fromLabel = fromU?.label?.split(' ')[0] || h.from;
+              const toLabel   = toU?.label?.split(' ')[0]   || h.to;
+              return `
+                <li class="item-row history-row" data-id="${h.id}">
+                  <span class="item-main">
+                    <span class="item-icon" aria-hidden="true">${cat?.icon || ''}</span>
+                    <span class="item-text">
+                      <strong>${Converter.format(h.fromVal)}</strong> ${fromLabel}
+                      → <strong>${Converter.format(h.toVal)}</strong> ${toLabel}
+                    </span>
+                  </span>
+                  <span class="item-time">${this._relativeTime(h.ts)}</span>
+                </li>
+              `;
+            }).join('')}
+          </ul>
+        `;
+
+        // Click history item → restore conversion
+        content.querySelectorAll('.history-row').forEach(el => {
+          el.addEventListener('click', () => {
+            const h = Storage.getHistory().find(x => String(x.id) === String(el.dataset.id));
+            if (!h) return;
+            // Update topbar title
+            const cat = UnitData.getCategory(h.category);
+            const titleEl = document.getElementById('topbarTitle');
+            if (titleEl) titleEl.textContent = cat.label;
+            // Set state directly
+            this.state.category = h.category;
+            this.state.fromUnit  = h.from;
+            this.state.toUnit    = h.to;
+            // Single render
+            this.renderSidebar();
+            this.renderConverter();
+            this.updateFavToggle();
+            // Restore value
+            const fromInput = document.getElementById('fromInput');
+            if (fromInput) {
+              fromInput.value = h.fromVal;
+              fromInput.dispatchEvent(new Event('input'));
+            }
+          });
+        });
+
+        document.getElementById('clearHistoryBtn')?.addEventListener('click', () => {
+          Storage.clearHistory();
+          this.renderHistoryTab();
+        });
+      },
+
+      // ── Favorites tab ─────────────────────────────────────
+
+      renderFavoritesTab() {
+        const content = document.getElementById('tabContent');
+        const favs    = Storage.getFavorites();
+
+        if (!favs.length) {
+          content.innerHTML = '<p class="tab-empty">즐겨찾기가 없습니다.<br>별(☆) 버튼으로 추가하세요.</p>';
+          return;
+        }
+
+        content.innerHTML = `
+          <ul class="item-list" aria-label="즐겨찾기 목록">
+            ${favs.map((f, i) => {
+              const cat   = UnitData.getCategory(f.category);
+              const fromU = UnitData.getUnit(f.category, f.from);
+              const toU   = UnitData.getUnit(f.category, f.to);
+              const fromLabel = fromU?.label?.split(' ')[0] || f.from;
+              const toLabel   = toU?.label?.split(' ')[0]   || f.to;
+              return `
+                <li class="item-row fav-tab-row" data-index="${i}">
+                  <span class="item-main fav-tab-label"
+                        data-category="${f.category}" data-from="${f.from}" data-to="${f.to}">
+                    <span class="item-icon" aria-hidden="true">${cat?.icon || ''}</span>
+                    <span class="item-text">${fromLabel} → ${toLabel}</span>
+                  </span>
+                  <button class="fav-tab-del" data-index="${i}" aria-label="즐겨찾기 삭제">✕</button>
+                </li>
+              `;
+            }).join('')}
+          </ul>
+        `;
+
+        // Click fav item → navigate to that conversion
+        content.querySelectorAll('.fav-tab-label').forEach(el => {
+          el.addEventListener('click', () => {
+            const cat = UnitData.getCategory(el.dataset.category);
+            const titleEl = document.getElementById('topbarTitle');
+            if (titleEl) titleEl.textContent = cat.label;
+            this.state.category = el.dataset.category;
+            this.state.fromUnit  = el.dataset.from;
+            this.state.toUnit    = el.dataset.to;
+            this.renderSidebar();
+            this.renderConverter();
+            this.updateFavToggle();
+          });
+        });
+
+        // Delete fav from tab
+        content.querySelectorAll('.fav-tab-del').forEach(btn => {
+          btn.addEventListener('click', e => {
+            e.stopPropagation();
+            const favs = Storage.getFavorites();
+            Storage.removeFavorite(favs[parseInt(btn.dataset.index)]);
+            this.renderFavoritesTab();
+            this.renderFavoritesSidebar();
+            this.updateFavToggle();
+          });
+        });
+      },
+
+      // ── Helpers ───────────────────────────────────────────
+
+      _relativeTime(ts) {
+        const diff = Date.now() - ts;
+        const sec  = Math.floor(diff / 1000);
+        const min  = Math.floor(sec / 60);
+        const h    = Math.floor(min / 60);
+        const d    = Math.floor(h / 24);
+        if (sec < 60)  return '방금 전';
+        if (min < 60)  return `${min}분 전`;
+        if (h   < 24)  return `${h}시간 전`;
+        if (d === 1)   return '어제';
+        if (d   < 7)   return `${d}일 전`;
+        return new Date(ts).toLocaleDateString('ko-KR');
+      },
+
+  // ── Theme ─────────────────────────────────────────────
+
+  initTheme() {
+    const saved      = Storage.getTheme();
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = saved === 'dark' || (saved === 'auto' && prefersDark);
+    this._applyTheme(isDark ? 'dark' : 'light');
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next    = current === 'dark' ? 'light' : 'dark';
+      this._applyTheme(next);
+      Storage.setTheme(next);
+    });
+
+    // React to system theme changes when user has 'auto' preference
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      if (Storage.getTheme() === 'auto') {
+        this._applyTheme(e.matches ? 'dark' : 'light');
+      }
+    });
+  },
+
+  _applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    const btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  },
+    };
+
+// ── App init ──────────────────────────────────────────────
+
+const App = {
+  init() {
+    // 1. Theme (first, to prevent flash before content renders)
+    UI.initTheme();
+
+    // 2. Sidebar
+    UI.renderSidebar();
+    UI.renderFavoritesSidebar();
+    UI.initSidebarEvents();
+
+    // 3. Main converter panel
+    UI.renderConverter();
+
+    // 4. Bottom tabs
+    UI.renderHistoryTab();
+    UI.initTabEvents();
+
+    // 5. Set initial topbar title
+    const titleEl = document.getElementById('topbarTitle');
+    if (titleEl) titleEl.textContent = UnitData.getCategory(UI.state.category).label;
+  },
+};
+
+document.addEventListener('DOMContentLoaded', () => App.init());
+  </script>
+</body>
+</html>
