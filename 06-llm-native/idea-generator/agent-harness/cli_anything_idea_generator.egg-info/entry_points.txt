@@ -1,2 +1,0 @@
-[console_scripts]
-cli-anything-idea-generator = cli_anything.idea_generator.idea_generator_cli:main
